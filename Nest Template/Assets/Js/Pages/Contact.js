@@ -119,6 +119,9 @@ if (contactForm) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = "Send message";
         }
+      })
+      .catch((error) => {
+        window.location.replace("./Page-404.html");
       });
   });
 }
