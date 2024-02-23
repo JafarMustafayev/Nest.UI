@@ -54,11 +54,13 @@ async function GetAll() {
 
           var divCard = `
             <a id="main-item" value="${element.id}" class="main-contact-item">
+          
+            ${element.isRead ? "" : '<span class="pulse-danger"></span>'} 
               <div class="avatar avatar-md avatar-rounded bg-secondary">
                 <span class="flex-shrink-0">
                   ${element.fullName[0].toUpperCase()}
                 </span>
-              </div>
+                </div>
               <div class="main-contact-body">
                 <h6 class="fs-14">${element.fullName}</h6>
                 <span>${element.subject}</span>
@@ -66,7 +68,7 @@ async function GetAll() {
                   ${element.createdAt.split("T")[0]}
                 </span>
               </div>
-            </a>`;
+            </a><span class=" float-end"></span>`;
           table.innerHTML += divCard;
         });
       }
@@ -80,14 +82,13 @@ async function GetAll() {
         showConfirmButton: false,
       });
     });
-  contactDetails = searchContactItem();
+  ContactDetails();
 }
 
 // Contact details sayfası için aşağıdaki kodlar kullanılabilir.
 
-function searchContactItem() {
+function ContactDetails() {
   var items = document.querySelectorAll("#main-item");
-
   items.forEach((element) => {
     element.addEventListener("click", async function () {
       var id = element.getAttribute("value");
@@ -109,18 +110,22 @@ function searchContactItem() {
               showConfirmButton: false,
             });
           } else {
+            element
+              .getElementsByTagName("span")[0]
+              .classList.remove("pulse-danger");
+
             var contactDetails = document.getElementById("contact-Box");
             contactDetails.innerHTML = "";
 
-            var tarihVeSaat = new Date(`${data.payload.createdAt}`);
-            var formatli =
-              tarihVeSaat.toLocaleDateString("tr-TR", {
+            var DateTime = new Date(`${data.payload.createdAt}`);
+            var format =
+              DateTime.toLocaleDateString("tr-TR", {
                 day: "numeric",
                 month: "numeric",
                 year: "numeric",
               }) +
               " " +
-              tarihVeSaat.toLocaleTimeString("tr-TR", {
+              DateTime.toLocaleTimeString("tr-TR", {
                 hour: "2-digit",
                 minute: "2-digit",
               });
@@ -130,13 +135,13 @@ function searchContactItem() {
                 <div class="media">
                     <div class="media-body">
                       <h5>${data.payload.fullName}</h5>
-                      <p>${formatli}</p>
+                      <p>${format}</p>
                       <nav class="contact-info d-block d-lg-none d-xl-block">
-                          <a href="javascript:void(0);" class="contact-icon border text-inverse mb-1" data-bs-toggle="tooltip" title="message"><i class="fe fe-message-square"></i></a>
+                          <a href="javascript:void(0);" id="sendMessage" value="${data.payload.id}" class="contact-icon border text-inverse mb-1" data-bs-toggle="tooltip" title="message"><i class="fe fe-message-square"></i></a>
                       </nav>
                     </div>
                     <div class="main-contact-action btn-list ms-auto pt-lg-0 float-end">
-                      <a href="javascript:void(0);" class="btn ripple btn-secondary btn-icon" data-bs-placement="top" data-bs-toggle="tooltip" title="Delete Contact"><i class="fe fe-trash-2"></i></a>
+                      <a href="javascript:void(0);" id="deleteContact" value="${data.payload.id}" class="btn ripple btn-secondary btn-icon" data-bs-placement="top" data-bs-toggle="tooltip" title="Delete Contact"><i class="fe fe-trash-2"></i></a>
                     </div>
                 </div>
               </div>
@@ -162,6 +167,8 @@ function searchContactItem() {
             `;
 
             contactDetails.innerHTML += contactDetailsDiv;
+
+            DeleteContact();
           }
         })
         .catch((err) => {
@@ -173,6 +180,49 @@ function searchContactItem() {
           });
         });
     });
+  });
+}
+
+function DeleteContact() {
+  debugger;
+  var deleteButton = document.getElementById("deleteContact");
+  deleteButton.addEventListener("click", async function () {
+    var id = deleteButton.getAttribute("value");
+    var url = `https://localhost:7162/api/admin/ContactManage/Delete/${id}`;
+
+    await fetch(url, {
+      method: "DELETE",
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!data && !data.success) {
+          if (!data.message) {
+            data.message = "internal server error";
+          }
+          Swal.fire({
+            position: "top-end",
+            icon: "warning",
+            title: data.message,
+            showConfirmButton: false,
+          });
+        } else {
+          Swal.fire({
+            position: "top-end",
+            icon: "success",
+            title: "Başarılı",
+            showConfirmButton: false,
+          });
+          GetAll();
+        }
+      })
+      .catch((err) => {
+        Swal.fire({
+          position: "top-end",
+          icon: "warning",
+          title: "Bir hata oluştu",
+          showConfirmButton: false,
+        });
+      });
   });
 }
 
