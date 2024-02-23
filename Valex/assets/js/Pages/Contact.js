@@ -70,6 +70,15 @@ async function GetAll() {
           table.innerHTML += divCard;
         });
       }
+    })
+    .catch((err) => {
+      table.innerHTML = "";
+      Swal.fire({
+        position: "top-end",
+        icon: "warning",
+        title: "Bir hata oluştu",
+        showConfirmButton: false,
+      });
     });
   contactDetails = searchContactItem();
 }
@@ -154,6 +163,14 @@ function searchContactItem() {
 
             contactDetails.innerHTML += contactDetailsDiv;
           }
+        })
+        .catch((err) => {
+          Swal.fire({
+            position: "top-end",
+            icon: "warning",
+            title: "Bir hata oluştu",
+            showConfirmButton: false,
+          });
         });
     });
   });
