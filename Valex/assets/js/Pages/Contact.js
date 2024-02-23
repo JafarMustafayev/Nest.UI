@@ -1,24 +1,27 @@
-// Datalar ilk yüklendiğinde çalışacak olan kodlar burada bulunacak
-
-async function GetAll() {
-  var table = document.getElementById("contactTable");
-  var contactDetails = document.getElementById("contact-Box");
-
-  if (!table) {
-    return;
-  }
-  contactDetails.innerHTML = "";
-
-  var url = "https://localhost:7162/api/admin/ContactManage/GetAll";
-
-  table.innerHTML = `
-  <div class="d-flex justify-content-center mt-5 mb-5" bis_skin_checked="1">
+function ShowSpinner() {
+  spinner = `
+  <div id="spinner" class="d-flex justify-content-center mt-5 mb-5" bis_skin_checked="1">
     <div class="spinner-grow" role="status" bis_skin_checked="1">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>`;
+  table = document.getElementById("contactTable");
+  table.innerHTML += spinner;
+}
 
-  await fetch(url, {
+function HideSpinner() {
+  var spinner = document.getElementById("spinner");
+  if (spinner) {
+    spinner.remove();
+  }
+}
+
+async function Get(page = 1) {
+  console.log(page);
+  var table = document.getElementById("contactTable");
+  var url = `https://localhost:7162/api/admin/ContactManage/GetAll/${page}`;
+
+  return await fetch(url, {
     method: "GET",
   })
     .then((response) => response.json())
@@ -35,24 +38,40 @@ async function GetAll() {
           showConfirmButton: false,
         });
       } else {
-        table.innerHTML = "";
+        return data.payload;
+      }
+    })
+    .catch((err) => {
+      table.innerHTML = "";
+      Swal.fire({
+        position: "top-end",
+        icon: "warning",
+        title: "something went wrong",
+        showConfirmButton: false,
+      });
+    });
+}
 
-        var startWith = "";
+async function AddDataToTable(data) {
+  var table = document.getElementById("contactTable");
+  HideSpinner();
 
-        data.payload.forEach((element) => {
-          if (element.fullName[0].toUpperCase() != startWith.toUpperCase()) {
-            startWith = element.fullName[0].toUpperCase();
-            var startsWithDiv = `
+  var startWith = "";
+
+  data.forEach((element) => {
+    if (element.fullName[0].toUpperCase() != startWith.toUpperCase()) {
+      startWith = element.fullName[0].toUpperCase();
+      var startsWithDiv = `
             <div class="main-contact-label">${startWith}</div>
             `;
-            table.innerHTML += startsWithDiv;
-          }
+      table.innerHTML += startsWithDiv;
+    }
 
-          if (element.fullName && element.fullName.length > 40) {
-            element.fullName = element.fullName.substring(0, 40) + "...";
-          }
+    if (element.fullName && element.fullName.length > 40) {
+      element.fullName = element.fullName.substring(0, 40) + "...";
+    }
 
-          var divCard = `
+    var divCard = `
             <a id="main-item" value="${element.id}" class="main-contact-item">
           
             ${element.isRead ? "" : '<span class="pulse-danger"></span>'} 
@@ -69,25 +88,11 @@ async function GetAll() {
                 </span>
               </div>
             </a><span class=" float-end"></span>`;
-          table.innerHTML += divCard;
-        });
-      }
-    })
-    .catch((err) => {
-      table.innerHTML = "";
-      Swal.fire({
-        position: "top-end",
-        icon: "warning",
-        title: "Bir hata oluştu",
-        showConfirmButton: false,
-      });
-    });
-  ContactDetails();
+    table.innerHTML += divCard;
+  });
 }
 
-// Contact details sayfası için aşağıdaki kodlar kullanılabilir.
-
-function ContactDetails() {
+async function ContactDetails() {
   var items = document.querySelectorAll("#main-item");
   items.forEach((element) => {
     element.addEventListener("click", async function () {
@@ -167,15 +172,15 @@ function ContactDetails() {
             `;
 
             contactDetails.innerHTML += contactDetailsDiv;
-
             DeleteContact();
+            SendMessage();
           }
         })
         .catch((err) => {
           Swal.fire({
             position: "top-end",
             icon: "warning",
-            title: "Bir hata oluştu",
+            title: "something went wrong",
             showConfirmButton: false,
           });
         });
@@ -183,8 +188,7 @@ function ContactDetails() {
   });
 }
 
-function DeleteContact() {
-  debugger;
+async function DeleteContact() {
   var deleteButton = document.getElementById("deleteContact");
   deleteButton.addEventListener("click", async function () {
     var id = deleteButton.getAttribute("value");
@@ -209,25 +213,88 @@ function DeleteContact() {
           Swal.fire({
             position: "top-end",
             icon: "success",
-            title: "Başarılı",
+            title: data.message,
             showConfirmButton: false,
           });
-          GetAll();
+
+          document.getElementById("contact-Box").innerHTML = "";
+
+          document.querySelectorAll("#main-item").forEach((element) => {
+            if (element.getAttribute("value") == id) {
+              element.remove();
+            }
+          });
         }
       })
       .catch((err) => {
         Swal.fire({
           position: "top-end",
           icon: "warning",
-          title: "Bir hata oluştu",
+          title: "something went wrong",
           showConfirmButton: false,
         });
       });
   });
 }
 
-window.onload = GetAll();
+function SendMessage() {
+  sendButton = document.getElementById("sendMessage");
+  sendButton.addEventListener("click", function () {
+    var storage = localStorage.getItem("contactId");
+    if (storage) {
+      localStorage.removeItem("contactId");
+    }
+    localStorage.setItem("contactId", sendButton.getAttribute("value"));
+    window.location.href = "../html/mail-compose.html";
+  });
+}
 
-document.getElementById("refresh").addEventListener("click", function () {
-  GetAll();
+async function LoadMore(table) {
+  if (
+    table.scrollTop + table.clientHeight == table.scrollHeight &&
+    isLoadingMore
+  ) {
+    isLoadingMore = false;
+    ShowSpinner();
+    setTimeout(async function () {
+      HideSpinner();
+      localStorage.setItem("page", parseInt(localStorage.getItem("page")) + 1);
+      var page = parseInt(localStorage.getItem("page"));
+      var data = await Get(page);
+      await AddDataToTable(data);
+      ContactDetails();
+      isLoadingMore = true;
+    }, 3000);
+    return;
+  }
+  return;
+}
+
+async function OnLoad() {
+  localStorage.setItem("page", 1);
+  var table = document.getElementById("contactTable");
+  table.innerHTML = "";
+  var chatBox = document.getElementById("contact-Box");
+  chatBox.innerHTML = "";
+
+  ShowSpinner();
+  var data = await Get();
+  await AddDataToTable(data);
+  ContactDetails();
+}
+
+var isLoadingMore = true;
+var table = document.getElementById("contactTable");
+
+table.addEventListener("scroll", function () {
+  LoadMore(table);
+});
+
+document.addEventListener("DOMContentLoaded", async function () {
+  OnLoad();
+});
+
+var refresh = document.getElementById("refresh");
+refresh.addEventListener("click", async function () {
+  OnLoad();
 });
