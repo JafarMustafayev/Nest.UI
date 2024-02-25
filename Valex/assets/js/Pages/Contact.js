@@ -26,7 +26,7 @@ async function Get(page = 1) {
   })
     .then((response) => response.json())
     .then((data) => {
-      if (!data && !data.success) {
+      if (!data || !data.success) {
         table.innerHTML = "";
         if (!data.message) {
           data.message = "internal server error";
