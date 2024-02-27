@@ -245,7 +245,7 @@ function SendMessage() {
       localStorage.removeItem("contactId");
     }
     localStorage.setItem("contactId", sendButton.getAttribute("value"));
-    window.location.href = "../html/mail-compose.html";
+    window.location.href = "../html/mail.html";
   });
 }
 
