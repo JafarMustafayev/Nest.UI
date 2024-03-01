@@ -240,11 +240,11 @@ async function DeleteContact() {
 function SendMessage() {
   sendButton = document.getElementById("sendMessage");
   sendButton.addEventListener("click", function () {
-    var storage = localStorage.getItem("contactId");
+    var storage = sessionStorage.getItem("contactId");
     if (storage) {
-      localStorage.removeItem("contactId");
+      sessionStorage.removeItem("contactId");
     }
-    localStorage.setItem("contactId", sendButton.getAttribute("value"));
+    sessionStorage.setItem("contactId", sendButton.getAttribute("value"));
     window.location.href = "../html/mail.html";
   });
 }
@@ -258,8 +258,11 @@ async function LoadMore(table) {
     ShowSpinner();
     setTimeout(async function () {
       HideSpinner();
-      localStorage.setItem("page", parseInt(localStorage.getItem("page")) + 1);
-      var page = parseInt(localStorage.getItem("page"));
+      sessionStorage.setItem(
+        "page",
+        parseInt(sessionStorage.getItem("page")) + 1
+      );
+      var page = parseInt(sessionStorage.getItem("page"));
       var data = await Get(page);
       await AddDataToTable(data);
       ContactDetails();
@@ -271,7 +274,7 @@ async function LoadMore(table) {
 }
 
 async function OnLoad() {
-  localStorage.setItem("page", 1);
+  sessionStorage.setItem("page", 1);
   var table = document.getElementById("contactTable");
   table.innerHTML = "";
   var chatBox = document.getElementById("contact-Box");

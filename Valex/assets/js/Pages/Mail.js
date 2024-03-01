@@ -51,16 +51,16 @@ async function fetchToBack(url, method, data) {
 function GetDataOnLocalStorage() {
   var localStorageData = {};
 
-  for (var i = 0; i < localStorage.length; i++) {
-    key = localStorage.key(i);
-    value = localStorage.getItem(key);
+  for (var i = 0; i < sessionStorage.length; i++) {
+    key = sessionStorage.key(i);
+    value = sessionStorage.getItem(key);
     if (
       value.includes("subject") &&
       value.includes("to") &&
       value.includes("body")
     ) {
-      localStorageData[localStorage.key(i)] = JSON.parse(
-        localStorage.getItem(localStorage.key(i))
+      localStorageData[sessionStorage.key(i)] = JSON.parse(
+        sessionStorage.getItem(sessionStorage.key(i))
       );
     }
   }
@@ -203,7 +203,7 @@ async function OnLoad() {
   table.innerHTML = "";
   ShowSpinner(table);
   var page = 1;
-  localStorage.setItem("mailPage", page);
+  sessionStorage.setItem("mailPage", page);
   var url = `https://localhost:7162/api/admin/Email/GetAllMails/${page}`;
 
   var data = await fetchToBack(url, "GET", null);
@@ -220,7 +220,7 @@ function ShowMailCompose() {
   draft.style.display = "none";
   trash.style.display = "none";
 
-  if (!localStorage.getItem("contactId")) {
+  if (!sessionStorage.getItem("contactId")) {
     document.getElementById("contact-box").innerHTML = "";
     document.getElementById("toInput").disabled = false;
     document.getElementById("toInput").value = "";
@@ -364,7 +364,7 @@ async function AddDataToInbox(data, table) {
 }
 
 async function LoadContact() {
-  var storage = localStorage.getItem("contactId");
+  var storage = sessionStorage.getItem("contactId");
   if (!storage) {
     return;
   }
@@ -424,7 +424,7 @@ async function LoadContact() {
             </div>
             `;
   messageBox.innerHTML += contactDetailsDiv;
-  localStorage.removeItem("contactId");
+  sessionStorage.removeItem("contactId");
 }
 
 function AddDataToDetails(data) {
@@ -507,10 +507,10 @@ async function NextMailPage() {
   table.innerHTML = "";
   ShowSpinner(table);
 
-  var page = localStorage.getItem("mailPage");
+  var page = sessionStorage.getItem("mailPage");
   page++;
 
-  localStorage.setItem("mailPage", page);
+  sessionStorage.setItem("mailPage", page);
   var url = `https://localhost:7162/api/admin/Email/GetAllMails/${page}`;
 
   var data = await fetchToBack(url, "GET", null);
@@ -525,8 +525,8 @@ async function NextMailPage() {
 async function PreviousMailPage() {
   previousPage.disabled = true;
   nextPage.disabled = true;
-  var page = localStorage.getItem("mailPage");
-  if (page == 1) {
+  var page = sessionStorage.getItem("mailPage");
+  if (page <= 1) {
     return;
   }
 
@@ -535,16 +535,15 @@ async function PreviousMailPage() {
   ShowSpinner(table);
 
   page--;
-  localStorage.setItem("mailPage", page);
+  sessionStorage.setItem("mailPage", page);
 
-  localStorage.setItem("page", page);
   var url = `https://localhost:7162/api/admin/Email/GetAllMails/${page}`;
   var data = await fetchToBack(url, "GET", null);
   if (!data) {
     return;
   }
 
-  if (page == 1) {
+  if (page < 2) {
     previousPage.disabled = true;
   } else {
     previousPage.disabled = false;
@@ -594,7 +593,7 @@ async function SaveEmail() {
     data[key] = value;
   });
 
-  localStorage.setItem(Guid(), JSON.stringify(data));
+  sessionStorage.setItem(Guid(), JSON.stringify(data));
   document.getElementById("mailComposeForm").reset();
   OnLoad();
 }
@@ -622,7 +621,7 @@ async function DeleteMail() {
 
 function DiscardEmail() {
   document.getElementById("mailComposeForm").reset();
-  localStorage.removeItem(document.getElementById("discardBtn").value);
+  sessionStorage.removeItem(document.getElementById("discardBtn").value);
   OnLoad();
 }
 
@@ -631,7 +630,7 @@ function DiscardEmail() {
 //#region Add Event Listeners
 
 document.addEventListener("DOMContentLoaded", async () => {
-  var local = localStorage.getItem("contactId");
+  var local = sessionStorage.getItem("contactId");
   if (local) {
     ShowMailCompose();
     await LoadContact();
