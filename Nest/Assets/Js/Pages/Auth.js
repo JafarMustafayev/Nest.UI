@@ -1,5 +1,4 @@
 async function fetchToBack(url, method, data) {
-  debugger;
   return await fetch(url, {
     method: method,
     body: data ? data : null,
@@ -8,8 +7,9 @@ async function fetchToBack(url, method, data) {
     .then((data) => {
       debugger;
       if (!data || !data.success) {
+        debugger;
         if (!data.message) {
-          data.message = "internal server error";
+          data.message = "internall server error";
         }
         Swal.fire({
           position: "top-end",
@@ -18,13 +18,13 @@ async function fetchToBack(url, method, data) {
           timer: 2000,
           showConfirmButton: false,
         });
+        console.log(data);
         return data;
       } else {
         return data;
       }
     })
     .catch((err) => {
-      debugger;
       hideSpinner();
       Swal.fire({
         position: "top-end",
@@ -124,7 +124,6 @@ function captureRegisterData() {
 }
 
 function captureLoginData() {
-  debugger;
   var form = document.getElementById("loginForm");
   if (form) {
     var formData = new FormData(form);
@@ -148,7 +147,6 @@ function captureLoginData() {
         span.innerHTML = "";
       }
 
-      debugger;
       if (key == "Password" && (value.length < 8 || value.length > 64)) {
         status = false;
         span.innerHTML = "Password must be between 8 and 64 characters";
@@ -160,6 +158,56 @@ function captureLoginData() {
     } else {
       return;
     }
+  }
+}
+
+function captureResetPasswordData() {
+  var password = document.getElementById("PasswordInput").value;
+  var confirmedPassword = document.getElementById("ConfirmPasswordInput").value;
+
+  var status = true;
+
+  if (confirmedPassword != "" && password != "") {
+    if (confirmedPassword != password) {
+      var span = document.getElementById("ConfirmPasswordInputSpan");
+      span.innerHTML = "Password does not match";
+      status = false;
+    } else {
+      var span = document.getElementById("ConfirmPasswordInputSpan");
+      span.innerHTML = "";
+    }
+  } else {
+    if (password == "") {
+      var span = document.getElementById("PasswordInputSpan");
+      span.innerHTML = "This field is required";
+      status = false;
+    } else {
+      var span = document.getElementById("PasswordInputSpan");
+      span.innerHTML = "";
+    }
+    if (confirmedPassword == "") {
+      var span = document.getElementById("ConfirmPasswordInputSpan");
+      span.innerHTML = "This field is required";
+      status = false;
+    } else {
+      var span = document.getElementById("ConfirmPasswordInputSpan");
+      span.innerHTML = "";
+    }
+
+    if (password.length < 8 || password.length > 64) {
+      var span = document.getElementById("PasswordInputSpan");
+      span.innerHTML = "Password must be between 8 and 64 characters";
+      status = false;
+    } else {
+      var span = document.getElementById("PasswordInputSpan");
+      span.innerHTML = "";
+    }
+  }
+
+  if (!status) {
+    return;
+  } else {
+    return password;
   }
 }
 //#endregion
@@ -175,7 +223,6 @@ function hideSpinner() {
 }
 
 function addError(data) {
-  debugger;
   var allSpan = document.querySelectorAll("span");
   allSpan.forEach((span) => {
     span.innerHTML = "";
@@ -200,7 +247,6 @@ function addError(data) {
 }
 
 async function login() {
-  debugger;
   var data = captureLoginData();
   if (data) {
     showSpinner();
@@ -210,7 +256,6 @@ async function login() {
     var res = await fetchToBack(url, "POST", data);
 
     if (res.success == true) {
-      debugger;
       document.getElementById("loginForm").reset();
       await sessionStorage.setItem("token", JSON.stringify(res.payload));
 
@@ -257,6 +302,95 @@ async function register() {
   }
 }
 
+async function forgotPassword() {
+  var email = document.getElementById("EmailInput").value;
+  var span = document.getElementById("EmailInputSpan");
+
+  var status = true;
+  if (email == "") {
+    status = false;
+    span.innerHTML = "This field is required";
+  } else {
+    span.innerHTML = "";
+    if (!RegExp(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/).test(email)) {
+      span.innerHTML = "Invalid email";
+      status = false;
+    } else {
+      span.innerHTML = "";
+    }
+  }
+
+  if (!status) {
+    return;
+  }
+
+  var url = `https://localhost:7162/api/auth/ForgotPassword?email=${email}`;
+  var res = await fetchToBack(url, "GET", null);
+  if (res.errors == null && res.success == true) {
+    document.getElementById("forgotPasswordForm").reset();
+    Swal.fire({
+      position: "top-end",
+      icon: "success",
+      title: res.message,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  } else {
+    addError(res.errors);
+  }
+}
+
+async function resetPassword() {
+  var urlParams = new URLSearchParams(window.location.search);
+
+  debugger;
+  var token = urlParams.get("token");
+  var userId = urlParams.get("userId");
+
+  if (token == null || userId == null) {
+    window.location.href = "./login.html";
+  }
+
+  var formData = new FormData();
+
+  formData.append("resetToken", token);
+  formData.append("userId", userId);
+
+  var verifyUrl = `https://localhost:7162/api/Auth/VerifyResetToken`;
+
+  var res = await fetchToBack(verifyUrl, "POST", formData);
+
+  if (res.success == true) {
+    var password = captureResetPasswordData();
+    if (password) {
+      var resetUrl = `https://localhost:7162/api/auth/resetPassword`;
+      formData.append("NewPassword", password);
+      var res = await fetchToBack(resetUrl, "POST", formData);
+      if (res.success == true) {
+        document.getElementById("resetPasswordForm").reset();
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: res.message,
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        window.location.href = "./login.html";
+      } else {
+        addError(res.errors);
+      }
+    }
+  } else {
+    Swal.fire({
+      position: "top-end",
+      icon: "warning",
+      title: res.message,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+  }
+}
+
 if (document.getElementById("registerForm")) {
   document
     .getElementById("registerForm")
@@ -271,4 +405,23 @@ if (document.getElementById("loginForm")) {
     e.preventDefault();
     login();
   });
+}
+
+if (document.getElementById("forgotPasswordForm")) {
+  document
+    .getElementById("forgotPasswordForm")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
+      await forgotPassword();
+    });
+}
+
+if (document.getElementById("resetPasswordForm")) {
+  document
+    .getElementById("resetPasswordForm")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      await resetPassword();
+    });
 }
