@@ -1,13 +1,12 @@
 async function fetchToBack(url, method, data) {
+  debugger;
   return await fetch(url, {
     method: method,
-    body: data,
-    headers: {
-      accept: "application/json",
-    },
+    body: data ? data : null,
   })
     .then((response) => response.json())
     .then((data) => {
+      debugger;
       if (!data || !data.success) {
         if (!data.message) {
           data.message = "internal server error";
@@ -25,6 +24,7 @@ async function fetchToBack(url, method, data) {
       }
     })
     .catch((err) => {
+      debugger;
       hideSpinner();
       Swal.fire({
         position: "top-end",
@@ -108,6 +108,11 @@ function captureRegisterData() {
           }
         }
       }
+
+      if (key == "Password" && (value.length < 8 || value.length > 64)) {
+        status = false;
+        span.innerHTML = "Password must be between 8 and 64 characters";
+      }
     }
 
     if (status == true) {
@@ -119,6 +124,7 @@ function captureRegisterData() {
 }
 
 function captureLoginData() {
+  debugger;
   var form = document.getElementById("loginForm");
   if (form) {
     var formData = new FormData(form);
@@ -169,6 +175,7 @@ function hideSpinner() {
 }
 
 function addError(data) {
+  debugger;
   var allSpan = document.querySelectorAll("span");
   allSpan.forEach((span) => {
     span.innerHTML = "";
@@ -193,6 +200,7 @@ function addError(data) {
 }
 
 async function login() {
+  debugger;
   var data = captureLoginData();
   if (data) {
     showSpinner();
@@ -202,8 +210,9 @@ async function login() {
     var res = await fetchToBack(url, "POST", data);
 
     if (res.success == true) {
+      debugger;
       document.getElementById("loginForm").reset();
-      sessionStorage.setItem("token", JSON.stringify(res.payload));
+      await sessionStorage.setItem("token", JSON.stringify(res.payload));
 
       hideSpinner();
       window.location.href = "./index.html";
