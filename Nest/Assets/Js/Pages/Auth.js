@@ -100,7 +100,11 @@ function captureRegisterData() {
 
       if (key == "PhoneNumber") {
         if (formData.get("PhoneNumber")) {
-          if (!RegExp(/^[0-9]{10}$/).test(formData.get("PhoneNumber"))) {
+          if (
+            !RegExp(
+              /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/
+            ).test(formData.get("PhoneNumber"))
+          ) {
             span.innerHTML = "Invalid phone number";
             status = false;
           } else {

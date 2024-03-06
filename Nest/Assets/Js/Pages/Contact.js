@@ -49,7 +49,11 @@ function captureContactData() {
 
     if (key == "Phone") {
       if (formData.get("Phone")) {
-        if (!RegExp(/^\d{10}$/).test(formData.get("Phone"))) {
+        if (
+          !RegExp(
+            /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/
+          ).test(formData.get("Phone"))
+        ) {
           element.style.border = "1px solid red";
           span.innerHTML = "Invalid phone number";
           status = false;
